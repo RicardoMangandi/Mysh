@@ -413,10 +413,18 @@ char **parse_parameter_command_start(char *parameter)
 
 int command_start(char *parameter)
 {
+	char **arg = NULL;
 
+	if(parameter != NULL)
+		arg = parse_parameter_command_start(parameter);
+	
+	else
+		{
 
-	char ** arg = parse_parameter_command_start(parameter);
+		printf("\nNo parameter passed into start\n");
+		return -1;
 
+		}
 	
 
 	pid_t pid;
@@ -819,7 +827,7 @@ struct commands *analyze_command_by_user_function(char *entry_command, int index
 		return top;
 	}
 
-
+	// start
 	//there is only one command with zero parameter
 	else if(counter == len)
 	{	
