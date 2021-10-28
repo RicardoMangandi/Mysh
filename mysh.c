@@ -201,12 +201,8 @@ char **parse_parameter_command_start(char *parameter)
 		int current_path_length = strlen(whereami_command());
 		int size = strlen(parameter) + current_path_length;
 		
-
-
-		
 		char *new_path_specified = malloc(sizeof(char)*size+1);
 
-		
 
 		//parameter = 'test' param param param
 		// /users/ricardomangandi/desktop/c-programs
@@ -245,8 +241,7 @@ char **parse_parameter_command_start(char *parameter)
 
 		if(j == strlen(parameter))
 		{	
-			//just return the 2d array with the specified path
-			printf("There are no parameter");
+			//printf("There are no parameter");
 
 			arg[0] = malloc(sizeof(char)*strlen(new_path_specified)+1);
 
@@ -422,7 +417,9 @@ int command_start(char *parameter)
 		{
 
 		printf("\nNo parameter passed into start\n");
+		printf("\nTest change\n");
 		return -1;
+
 
 		}
 	
@@ -431,7 +428,6 @@ int command_start(char *parameter)
 	int status_of;
 	pid = fork();
 
-	//printf("\nThe pid is: %d\n", (int) pid);
 
 	if(pid < 0)
 	{
@@ -511,7 +507,7 @@ pid_t command_background(char *parameter)
 
 	pid_t pid;
 
-	// fork the process
+	//fork the process
 	pid = fork();
 	
 	// check for failure. main will handle the error
@@ -599,10 +595,7 @@ int execute_command(int command_number, char *parameter)
 
 		int val = returns_integer_value(parameter);
 
-		//printf("\nThe size of stack is %d Testing:%d\n",top->size ,val);
-
-		
-
+	
 		if(val == -999999)
 		{
 			printf("\nOnly integers are allowed to be passed in\n");
@@ -632,8 +625,6 @@ int execute_command(int command_number, char *parameter)
 	else if(command_number == 5)
 	{
 		printf("\nstart executed\n");
-
-
 		int res = command_start(parameter);
 
 
@@ -649,9 +640,6 @@ int execute_command(int command_number, char *parameter)
 			return -1;
 		}
 
-
-
-		
 	}
 
 	//parameter needed
@@ -778,7 +766,6 @@ struct commands *push_to_stack(char *entry_command, int index_stack, char *param
 			size_of_stack ++;
 			return node;
 	}
-
 
 }
 
