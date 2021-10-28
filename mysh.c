@@ -3,9 +3,6 @@ Author: Ricardo Mangandi
 COP4600 Fall 2021
 Project 2 Create a Shell Program
 */
-
-
-
 #include <stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -190,7 +187,7 @@ int returns_integer_value(char *parameter)
 
 }
 
-char **parse_parameter_command_start(char *parameter)
+char **parse_parameter(char *parameter)
 {
 
 	//if paraemeter[0] != 47 then we need to concat to current directory
@@ -203,9 +200,6 @@ char **parse_parameter_command_start(char *parameter)
 		
 		char *new_path_specified = malloc(sizeof(char)*size+1);
 
-
-		//parameter = 'test' param param param
-		// /users/ricardomangandi/desktop/c-programs
 
 		for(int i = 0; i < strlen(current_directory_global_variable); i++)
 		{	
@@ -411,15 +405,13 @@ int command_start(char *parameter)
 	char **arg = NULL;
 
 	if(parameter != NULL)
-		arg = parse_parameter_command_start(parameter);
+		arg = parse_parameter(parameter);
 	
 	else
 		{
 
 		printf("\nNo parameter passed into start\n");
-		printf("\nTest change\n");
-		return -1;
-
+		return -2;
 
 		}
 	
@@ -497,12 +489,27 @@ int command_start(char *parameter)
         }
 	}
 
+	return -1;
 
 }
 
 
 pid_t command_background(char *parameter)
 {
+
+
+	char **arg = NULL;
+
+	if(parameter != NULL)
+		arg = parse_parameter(parameter);
+	
+	else
+		{
+
+		printf("\nNo parameter passed into background\n");
+		return -2;
+
+		}
 
 
 	pid_t pid;
@@ -512,7 +519,8 @@ pid_t command_background(char *parameter)
 	
 	// check for failure. main will handle the error
 	if (pid < 0)
-	{
+	{	
+		printf("\nCould not use fork()\n");
 		kill(pid, SIGKILL);
 		return -1;
 	}
@@ -521,9 +529,12 @@ pid_t command_background(char *parameter)
 	else if (pid == 0)
 	{
 		// if the execution call doesn't return an error code
-		if (execv("ls", "-l") < 0)
+
+		int res = execv(arg[0],arg);
+
+		if (res == -1)
 		{
-			printf("\nExecution call was not able to return\n");
+			printf("\nExecv error could not find path or file\n");
 			return -1;
 		}
 	}
@@ -533,20 +544,65 @@ pid_t command_background(char *parameter)
 
 }
 
+//return -1 if the pid is invalid
+pid_t parse_pid(char *pid)
+{	
 
-int dalek_command(pid_t target_val)
-{
-
-
-	if(kill(target_val,SIGKILL) == 0)
+	if(pid != NULL)
 	{
-		printf("Dalek is done process is dead: %d",(int) target_val);
+	int i = 0;
+	for(int i = 0; i < strlen(pid);i++)
+	{
+
+		if(isdigit(pid[i]) == 0)
+		{
+			printf("\nInvalid pid passed in!\n");
+			return -2;
+		}
+
+
+	}
+
+	int res = atoi(pid);
+
+	if(res >= 0)
+		return res;
+	else
+		return -2;
+
+	return res;
+}
+
+	else
+	{	
+		printf("\nNo parameter passed into dalek\n");
+		return -2;
+	}
+
+}
+
+
+int dalek_command(char *pid_char_array)
+{	
+
+	pid_t pid = parse_pid(pid_char_array);
+
+	if(pid == -1 || pid == -2)
+	{
+		printf("\nInvalid pid passed in!\n");
+		return pid;
+	}
+
+
+	else if(kill(pid,SIGKILL) == 0)
+	{
+		printf("dalek is done process is dead: %s",pid_char_array);
 		return 7;
 	}
 
 	else
 	{
-		printf("Dalek is NOT DEAD: %d",(int) target_val);
+		printf("dalek failed process %s is NOT DEAD!",pid_char_array);
 		return -1;
 	}
 
@@ -648,9 +704,6 @@ int execute_command(int command_number, char *parameter)
 		printf("\nbackground executed\n");
 		int res = command_background(parameter);
 
-		dalek_command(res);
-
-
 		if(res == -1)
 		{	
 			printf("\nError: Could not run background\n");
@@ -671,9 +724,17 @@ int execute_command(int command_number, char *parameter)
 		printf("\ndalek PID executed\n");
 
 
-		//dalek_command(parameter);
+		int res = dalek_command(parameter);
 
-		return 7;
+		//printf("\nres:%d\n",res);
+
+		if(res == -1 || res == -2)
+		{
+			return res;
+		}
+
+		else
+			return 7;
 
 	}
 
@@ -695,6 +756,8 @@ int command_valid(char *command, char *parameter)
 			{	
 				int res = execute_command(i,parameter);
 				
+				//printf("\nres:%d\n",res);
+
 				if( res > -1)
 					return res;
 
@@ -708,7 +771,7 @@ int command_valid(char *command, char *parameter)
 				else
 				{	
 					printf("\nCommand %s could not be executed\n",command);
-					return -1;
+					return -3;
 				}
 
 			}	
@@ -717,7 +780,7 @@ int command_valid(char *command, char *parameter)
 
 	
 	
-	return -1;
+	return -2;
 
 }
 
@@ -773,8 +836,6 @@ struct commands *push_to_stack(char *entry_command, int index_stack, char *param
 struct commands *analyze_command_by_user_function(char *entry_command, int index_stack)
 {	
 
-
-
 	//struct commands *refer = malloc(sizeof(struct commands));
 	int len = strlen(entry_command);
 	int counter = 0;
@@ -814,21 +875,28 @@ struct commands *analyze_command_by_user_function(char *entry_command, int index
 		return top;
 	}
 
-	// start
+	
 	//there is only one command with zero parameter
 	else if(counter == len)
 	{	
 		//verify the command before placing it in a node
 		int res = command_valid(temp,NULL);
-		if(res < 0)
+		if(res == -1)
 		{
 			free(temp);	
-			printf("\n Error not a valid command!\n");
+			printf("\n Error: not a valid command!\n");
 			return top;
 		}
 
-		
-		else
+		else if(res == -2)
+		{
+			free(temp);
+			printf("\nError: invalid parameter passed in\n");
+			return top;
+		}
+
+
+		else if(res >= 0)
 		{	
 			return push_to_stack(temp,index_stack,NULL,res);
 		}
@@ -888,23 +956,30 @@ struct commands *analyze_command_by_user_function(char *entry_command, int index
 
 			else 
 			{
-				printf("\nError %s is not a valid parameter for history\n",other_temp);
+				printf("\nError: %s is not a valid parameter for history\n",other_temp);
 				return top;
 			}
 		}
 
 		
-		else if(res < 0)
+		else if(res == -1)
 			{	
-				printf("\nhas parameter\n");
-				int length = strlen(temp);
-				printf("\n Error %s is not a valid command it length is: %d!\n", temp,length);
+				//printf("\nhas parameter\n");
+				//int length = strlen(temp);
+				printf("\n Error: %s is not a valid command!\n", temp);
+				free(temp);
+				return top;
+			}
+
+			else if(res == -2)
+			{
+				printf("\n Error: %s is not a valid parameter!\n", other_temp);
 				free(temp);
 				return top;
 			}
 
 
-		else
+		else if(res >= 0)
 			{
 				return push_to_stack(temp,index_stack,other_temp,res);
 			}
@@ -913,9 +988,6 @@ struct commands *analyze_command_by_user_function(char *entry_command, int index
 
 	return NULL;
 }
-
-
-
 
 
 int main()
